@@ -7,15 +7,18 @@
                 <h1>Студенты</h1>
                 <a href="{{ url('/generate-docx') }}" role="button" class="btn btn-secondary">Скачать отчет</a>
             </div>
-            <div class="col-md-2" style="margin-top: 20px">
-                <div class="form-group">
-                    <select name="status" id="status" class="form-control custom-control">
-                        <option value="">Select status</option>
-                        <option value="1">Алексей</option>
-                        <option value="0">Алла </option>
-                    </select>
+                <div class="col-md-2" style="margin-top: 20px">
+                    <div class="form-group">
+                        <select name="name" id="name" class="form-control custom-control">
+                                <option value="" selected disabled>Выберите имя</option>
+                            @foreach($names as $name)
+                                <option value="{{$name->name}}">{{$name->name}}</option>
+                            @endforeach
+                        </select>
+                        <a href="{{ url('/studentsSort') }}" role="button" class="btn btn-secondary">Фильтрация</a>
+                        <a href="{{ url('/students') }}" role="button" class="btn btn-secondary">Сброс</a>
+                    </div>
                 </div>
-            </div>
             <div class="col-md-10">
                 <table  class="table" style="margin: 10px">
                     <thead>

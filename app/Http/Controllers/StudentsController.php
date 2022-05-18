@@ -15,15 +15,34 @@ use Symfony\Component\HttpFoundation\Request;
 
 class StudentsController extends Controller
 {
+
+    public function takeParam(Request $request){
+        $students = Students::get()->where('name', 'Алла');
+
+        $names = Students::get('name')->where('name', 'Алла');
+
+        return View('students.index', compact('students', 'names'));
+    }
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         $students = Students::get();
-        return View('students.index', compact('students'));
+
+        $names = Students::get('name');
+
+        if($request->ajax())
+        {
+            dd($request);
+            $students = Students::get()->where('name', 'Алла');
+
+            return View('child', compact('students'));
+        }
+//        dd($request, $students);
+        return View('students.index', compact('students', 'names'));
     }
 
     /**

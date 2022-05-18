@@ -9,7 +9,7 @@
                         <a href="{{ url('/vactinations') }}" role="button" class="btn btn-secondary">Вакцинации</a>
                     @else
                         <a href="{{ route('login') }}" role="button" class="btn btn-secondary">Войти</a>
-
+                        <a href="{{ url('/students') }}" role="button" class="btn btn-secondary">Студенты</a>
                         @if (Route::has('register'))
                             <a href="{{ route('register') }}" role="button" class="btn btn-secondary">Зарегистрироваться</a>
                         @endif

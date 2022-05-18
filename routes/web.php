@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\FilterController;
 use App\Http\Controllers\StudentsController;
+use App\Http\Controllers\VactinationsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,8 +26,10 @@ Route::resource('students', App\Http\Controllers\StudentsController::class);
 Route::resource('vactinations', App\Http\Controllers\VactinationsController::class);
 
 Route::get('/export', [StudentsController::class, 'export'])->name('export');
-Route::get('/exportVac', [\App\Http\Controllers\VactinationsController::class, 'exportVac'])->name('exportVac');
+Route::get('/exportVac', [VactinationsController::class, 'exportVac'])->name('exportVac');
 Route::get('/exportTest', [StudentsController::class, 'exportTest'])->name('exportTest');
 Route::get('/exportQuery', [StudentsController::class, 'exportQuery'])->name('exportQuery');
 
 Route::get('/generate-docx', [StudentsController::class, 'generateDocx'])->name('generateDocx');
+
+Route::get('/studentsSort', [StudentsController::class, 'takeParam'])->name('takeParam');
