@@ -38,6 +38,19 @@
                             <td>{{$student->surname}}</td>
                             <td>{{$student->middlename}}</td>
                             <td>{{$student->phone}}</td>
+
+                            @if (Route::has('login'))
+                                @if (Auth::check() && Auth::user()->admin == true)
+                                    <td class="center">
+                                        <form method="POST" action="{{ route('students.destroy', $student->id) }}">
+                                            <a href="{{ route('students.edit', $student->id) }}" class="btn btn-warning">Редактировать</a>
+                                            {{ csrf_field() }}
+                                            {{ method_field('DELETE') }}
+                                            <button class="btn btn-danger ajax" type="submit" name="action">Удалить</button>
+                                        </form>
+                                    </td>
+                                @endif
+                            @endif
                         </tr>
                     @endforeach
                 </table>
