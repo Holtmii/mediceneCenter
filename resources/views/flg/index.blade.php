@@ -3,43 +3,33 @@
 @section('content')
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-8">
-                <h1>Флюорографии</h1>
-                <a href="{{ route('flg.create') }}" role="button" class="btn btn-secondary">Создать запись флюорографии</a>
-            </div>
-                <div class="col-md-2" style="margin-top: 20px">
-                    <form action="{{ route('students.index') }}" method="GET" style="margin-top: 20px;">
-                        <select name="name" id="input">
-                            <option value="0">Select group</option>
+            <div class="row justify-content-around">
+                <div class="col-md-5">
+                    <h1>Флюорографии</h1>
+                    <a href="{{ route('flg.create') }}" role="button" class="btn btn-secondary">Создать запись флюорографии</a>
+                </div>
+
+                <div class="col-md-5" >
+                    <form style="margin-left: 100px" action="{{ route('flg.index') }}" method="GET">
+                        <select style="width: 75%" class="form-select" name="name" id="input">
+                            @if($groupFiltered != null && $groupFiltered != "0")
+                                <option value="{{ $groupFiltered }}" selected="true" disabled="disabled">Выбрано : {{ $groupFiltered }}</option>
+                            @else
+                                <option value="0" selected="true" disabled="disabled">Выбирите группу</option>
+                            @endif
                             @foreach ($groups as $group)
                                 <option value="{{$group->name}}">
                                     {{$group->name}}
                                 </option>
                             @endforeach
                         </select>
-                        <input type="submit" class="btn btn-danger btn-sm" value="Filter">
+                        <br>
+                        <input type="submit" class="btn btn-info" value="Фильтрация">
+                        <a href="{{ url('/flg') }}" role="button" class="btn btn-secondary">Очистить</a>
                     </form>
-                    <div class="form-group">
-                        <select onchange="filter(this.value)" name="name" id="name" class="form-control custom-control">
-                            @if(sizeof($groups) > 1)
-
-                                    <option value="" selected disabled>Выберите группу</option>
-                                @foreach($groups as $group)
-                                    <option value="{{$group->name}}">{{$group->name}}</option>
-                                @endforeach
-                            @else
-                                @foreach($groups as $group)
-                                    <option value="{{$group->name}}">{{$group->name}}</option>
-                                @endforeach
-                            @endif
-
-                        </select>
-{{--                        <a href="{{ url('/studentsSort') }}" role="button" class="btn btn-secondary">Фильтрация</a>--}}
-{{--                        <a href="{{ route('students.index', $fl->id) }}" role="button" class="btn btn-secondary">Фильтрация</a>--}}
-
-                        <a href="{{ url('/students') }}" role="button" class="btn btn-secondary">Сброс</a>
-                    </div>
                 </div>
+            </div>
+
             <div class="col-md-10">
                 <table  class="table" style="margin: 10px">
                     <thead>
@@ -50,7 +40,6 @@
                         <th>Студент</th>
                         <th>Группа</th>
                         <th>Факультет</th>
-{{--                        <th></th>--}}
                     </tr>
                     </thead>
                     <tbody>
@@ -69,12 +58,8 @@
                                     <td>{{$student->name}}</td>
                                 @endif
                             @endforeach
-                            @foreach($groups as $group)
-                                @if($student->group_id == $group->id)
-                                    <td>{{$group->name}}</td>
-                                    <td>{{$group->faculty}}</td>
-                                @endif
-                            @endforeach
+                                <td>{{$fl->grname}}</td>
+                                <td>{{$group->faculty}}</td>
 
                             @if (Route::has('login'))
                                 @if (Auth::check() && Auth::user()->admin == true)
@@ -83,7 +68,7 @@
                                             <a href="{{ route('flg.edit', $fl->id) }}" class="btn btn-warning">Редактировать</a>
                                             {{ csrf_field() }}
                                             {{ method_field('DELETE') }}
-                                            <button class="btn btn-danger ajax" type="submit" name="action">Удалить</button>
+                                            <button class="btn btn-danger" type="submit" name="action">Удалить</button>
                                         </form>
                                     </td>
                                 @endif
@@ -94,6 +79,4 @@
             </div>
         </div>
     </div>
-
-
 @endsection

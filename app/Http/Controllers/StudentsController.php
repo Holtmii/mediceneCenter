@@ -45,7 +45,7 @@ class StudentsController extends Controller
                 DB::raw("select id from \"groups\" g where \"name\" = '$groupFiltered'"))[0];
             $grNum = get_object_vars($grNum)['id'];
 
-            $groups = Groups::get()->where('id', $grNum);
+            $groups = Groups::get();
 
             $students = Students::get()->where('group_id', $grNum);
         } else {

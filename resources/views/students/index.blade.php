@@ -13,9 +13,9 @@
                 <form style="margin-left: 100px" action="{{ route('students.index') }}" method="GET">
                     <select style="width: 75%" class="form-select" name="name" id="input">
                         @if($groupFiltered != null && $groupFiltered != "0")
-                            <option value="{{ $groupFiltered }}">Выбрано : {{ $groupFiltered }}</option>
+                            <option value="{{ $groupFiltered }}" selected="true" disabled="disabled">Выбрано : {{ $groupFiltered }}</option>
                         @else
-                            <option value="0">Выбирите группу</option>
+                            <option value="0" selected="true" disabled="disabled">Выбирите группу</option>
                         @endif
                         @foreach ($groups as $group)
                             <option value="{{$group->name}}">
