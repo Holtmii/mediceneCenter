@@ -64,7 +64,8 @@ class StudentsController extends Controller
      */
     public function create()
     {
-        return View('students.create');
+        $groups = Groups::get();
+        return View('students.create', compact('groups'));
     }
 
     /**
@@ -101,8 +102,8 @@ class StudentsController extends Controller
     public function edit($id)
     {
         $students = Students::find($id);
-        return View('students.create')
-            ->with('students', $students);
+        $groups = Groups::get();
+        return View('students.create', compact('students', 'groups'));
     }
 
     /**
@@ -112,9 +113,10 @@ class StudentsController extends Controller
      * @param  \App\Models\Students  $students
      * @return Response
      */
-    public function update(UpdateStudentsRequest $request, Students $students)
+    public function update(UpdateStudentsRequest $request, $id)
     {
-        $students->update($request->only(['name', 'surname', 'middlename', 'phone']));
+        $students = Students::find($id);
+        $students->update($request->only(['name', 'surname', 'middlename', 'phone', 'group_id']));
         return redirect()->route('students.index');
     }
 

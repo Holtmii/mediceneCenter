@@ -38,14 +38,19 @@
                     <select class="form-select" name="student_id" id="student_id">
                         <option value="{{ old('student_id', isset($flgs) ? $flgs->student_id : null) }}" selected="true" disabled="disabled">
                             @foreach ($students as $stud)
-                                @if ($stud->id == $flgs->student_id)
+                                @if (isset($flgs) && $stud->id == $flgs->student_id)
                                     @foreach ($groups as $student)
                                         @if ($student->id == $stud->id)
                                             {{"$student->grname"}}
                                         @endif
                                     @endforeach
+                                @else
+
                                 @endif
                             @endforeach
+                            @if(!isset($flgs))
+                                    Выберите студента
+                            @endif
                         </option>
                         @foreach ($groups as $student)
                             <option value="{{$student->id}}">

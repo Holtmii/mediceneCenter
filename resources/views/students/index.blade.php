@@ -24,7 +24,7 @@
                         @endforeach
                     </select>
                     <br>
-                    <input type="submit" class="btn btn-danger" value="Фильтрация">
+                    <input type="submit" class="btn btn-info" value="Фильтрация">
                     <a href="{{ url('/students') }}" role="button" class="btn btn-secondary">Очистить</a>
                 </form>
             </div>
