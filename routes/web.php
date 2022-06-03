@@ -33,3 +33,6 @@ Route::get('/exportQuery', [StudentsController::class, 'exportQuery'])->name('ex
 Route::get('/generate-docx', [StudentsController::class, 'generateDocx'])->name('generateDocx');
 
 Route::get('/studentsSort', [StudentsController::class, 'takeParam'])->name('takeParam');
+
+
+Route::resource('flg', App\Http\Controllers\FlgController::class);

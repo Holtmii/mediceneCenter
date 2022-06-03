@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Exports\QueryExports;
 use App\Exports\TestExports;
+use App\Models\Groups;
 use App\Models\Students;
 use App\Http\Requests\StoreStudentsRequest;
 use App\Http\Requests\UpdateStudentsRequest;
 use App\Exports\UsersExport;
+use Carbon\Carbon;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use Mockery\Exception;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,38 +22,45 @@ class StudentsController extends Controller
 {
 
     public function takeParam(Request $request){
-        $students = Students::get()->where('name', 'Алла');
 
-        $names = Students::get('name')->where('name', 'Алла');
+        $groups = Groups::get()->where('id', '1');
 
-        return View('students.index', compact('students', 'names'));
+        $students = Students::get()->where('group_id', '1');
+
+        return View('students.index', compact('students', 'groups'));
     }
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function index(Request $request)
     {
-        $students = Students::get();
 
+        $groupFiltered = $request->query('name');
         $names = Students::get('name');
 
-        if($request->ajax())
-        {
-            dd($request);
-            $students = Students::get()->where('name', 'Алла');
+        if ($groupFiltered != null && $groupFiltered != "0") {
+            $grNum = DB::select(
+                DB::raw("select id from \"groups\" g where \"name\" = '$groupFiltered'"))[0];
+            $grNum = get_object_vars($grNum)['id'];
 
-            return View('child', compact('students'));
+            $groups = Groups::get()->where('id', $grNum);
+
+            $students = Students::get()->where('group_id', $grNum);
+        } else {
+            $students = Students::get();
+
+            $groups = Groups::get();
         }
-//        dd($request, $students);
-        return View('students.index', compact('students', 'names'));
+
+        return View('students.index', compact('students', 'groups', 'names', 'groupFiltered', 'request'));
     }
 
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
      */
     public function create()
     {
@@ -59,7 +71,7 @@ class StudentsController extends Controller
      * Store a newly created resource in storage.
      *
      * @param  \App\Http\Requests\StoreStudentsRequest  $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function store(StoreStudentsRequest $request)
     {
@@ -71,7 +83,7 @@ class StudentsController extends Controller
      * Display the specified resource.
      *
      * @param  \App\Models\Students  $students
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function show($id)
     {
@@ -84,7 +96,7 @@ class StudentsController extends Controller
      * Show the form for editing the specified resource.
      *
      * @param  \App\Models\Students  $students
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function edit($id)
     {
@@ -98,7 +110,7 @@ class StudentsController extends Controller
      *
      * @param  \App\Http\Requests\UpdateStudentsRequest  $request
      * @param  \App\Models\Students  $students
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function update(UpdateStudentsRequest $request, Students $students)
     {
@@ -110,7 +122,7 @@ class StudentsController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  \App\Models\Students  $students
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function destroy(Students $students)
     {
@@ -133,45 +145,196 @@ class StudentsController extends Controller
         return (new QueryExports())->download('query.xlsx');
     }
 
-    public function generateDocx()
+    public function generateDocx(Request $request)
     {
-        $query = DB::select(
-            'with
+
+        $past = Redirect::back()->getTargetUrl();
+
+//        $grName = Str::substr($past, -4);;
+
+//        dd($past);
+        if (Str::contains($past, ['?name'])) {
+            $grName = Str::substr($past, -4);;
+            $grNum = DB::select(
+                DB::raw("select id from \"groups\" g where \"name\" = '$grName'"))[0];
+            $grNum = get_object_vars($grNum)['id'];
+            $query = DB::select(
+                DB::raw("with
                 kor as (
-                    select s.id, v2."name", max(v.created_at)
+                    select s.id, max(v2.\"name\") as name, max(v.created_at)
+                        from students s
+                            join vactinations v on v.student_id = s.id
+                            join vaccines v2 on v2.id = v.vaccine_id
+                        where v2.\"name\" like 'В Корь'
+                    group by s.id
+                ),
+                cov as (
+                    select s.id, max(v2.\"name\") as name, max(v.created_at)
+                        from students s
+                            join vactinations v on v.student_id = s.id
+                            join vaccines v2 on v2.id = v.vaccine_id
+                        where v2.\"name\" like 'СПУТНИК'
+                    group by s.id
+                ),
+                flug as (
+                    select s.id, max(f.result) as result, max(f.created_at)
+                        from students s
+                            join flgs f on f.student_id = s.id
+                    group by s.id, f.result
+                )
+                select ROW_NUMBER() OVER() AS Row, s.id, (s.name || ' ' || s.surname || ' ' || s.middlename) as fio, (flug.result || ' ' || flug.max) as flgs, (cov.name || ' ' || cov.max) as covi, (kor.name || ' ' || kor.max) as korb
+                from students s
+                left join cov on cov.id = s.id
+                left join kor on kor.id = s.id
+                left join flug on flug.id = s.id
+                where group_id = '$grNum'")
+            );
+        } else {
+            $query = DB::select(
+                'with
+                kor as (
+                    select s.id, max(v2."name") as name, max(v.created_at)
                         from students s
                             join vactinations v on v.student_id = s.id
                             join vaccines v2 on v2.id = v.vaccine_id
                         where v2."name" like \'В Корь\'
-                    group by s.id, v2."name"
+                    group by s.id
                 ),
                 cov as (
-                    select s.id, v2."name", max(v.created_at)
+                    select s.id, max(v2."name") as name, max(v.created_at)
                         from students s
                             join vactinations v on v.student_id = s.id
                             join vaccines v2 on v2.id = v.vaccine_id
                         where v2."name" like \'СПУТНИК\'
-                    group by s.id, v2."name"
+                    group by s.id
                 ),
                 flug as (
-                    select s.id, f.result, max(f.created_at)
+                    select s.id, max(f.result) as result, max(f.created_at)
                         from students s
-                            join flg f on f.student_id = s.id
-                    group by s.id, f.result
+                            join flgs f on f.student_id = s.id
+                    group by s.id
                 )
-                select ROW_NUMBER() OVER() AS Row, s.id, (s.name || \' \' || s.surname || \' \' || s.middlename) as fio, (flug.result || \' \' || flug.max) as flg, (cov.name || \' \' || cov.max) as covi, (kor.name || \' \' || kor.max) as korb
+                select ROW_NUMBER() OVER() AS Row, s.id, (s.name || \' \' || s.surname || \' \' || s.middlename) as fio, (flug.result || \' \' || flug.max) as flgs, (cov.name || \' \' || cov.max) as covi, (kor.name || \' \' || kor.max) as korb
                 from students s
                 left join cov on cov.id = s.id
                 left join kor on kor.id = s.id
                 left join flug on flug.id = s.id'
-        );
+            );
+        }
+//        dd($grName, $query);
+//        }else {
+//            $query = DB::select(
+//                'with
+//                kor as (
+//                    select s.id, v2."name", max(v.created_at)
+//                        from students s
+//                            join vactinations v on v.student_id = s.id
+//                            join vaccines v2 on v2.id = v.vaccine_id
+//                        where v2."name" like \'В Корь\'
+//                    group by s.id, v2."name"
+//                ),
+//                cov as (
+//                    select s.id, v2."name", max(v.created_at)
+//                        from students s
+//                            join vactinations v on v.student_id = s.id
+//                            join vaccines v2 on v2.id = v.vaccine_id
+//                        where v2."name" like \'СПУТНИК\'
+//                    group by s.id, v2."name"
+//                ),
+//                flug as (
+//                    select s.id, f.result, max(f.created_at)
+//                        from students s
+//                            join flgs f on f.student_id = s.id
+//                    group by s.id, f.result
+//                )
+//                select ROW_NUMBER() OVER() AS Row, s.id, (s.name || \' \' || s.surname || \' \' || s.middlename) as fio, (flug.result || \' \' || flug.max) as flgs, (cov.name || \' \' || cov.max) as covi, (kor.name || \' \' || kor.max) as korb
+//                from students s
+//                left join cov on cov.id = s.id
+//                left join kor on kor.id = s.id
+//                left join flug on flug.id = s.id'
+//            );
+//        }
+
+//        if (Str::contains($past, ['/studentsSort'])){
+//            $query = DB::select(
+//                'with
+//                kor as (
+//                    select s.id, v2."name", max(v.created_at)
+//                        from students s
+//                            join vactinations v on v.student_id = s.id
+//                            join vaccines v2 on v2.id = v.vaccine_id
+//                        where v2."name" like \'В Корь\'
+//                    group by s.id, v2."name"
+//                ),
+//                cov as (
+//                    select s.id, v2."name", max(v.created_at)
+//                        from students s
+//                            join vactinations v on v.student_id = s.id
+//                            join vaccines v2 on v2.id = v.vaccine_id
+//                        where v2."name" like \'СПУТНИК\'
+//                    group by s.id, v2."name"
+//                ),
+//                flug as (
+//                    select s.id, f.result, max(f.created_at)
+//                        from students s
+//                            join flgs f on f.student_id = s.id
+//                    group by s.id, f.result
+//                )
+//                select ROW_NUMBER() OVER() AS Row, s.id, (s.name || \' \' || s.surname || \' \' || s.middlename) as fio, (flug.result || \' \' || flug.max) as flgs, (cov.name || \' \' || cov.max) as covi, (kor.name || \' \' || kor.max) as korb
+//                from students s
+//                left join cov on cov.id = s.id
+//                left join kor on kor.id = s.id
+//                left join flug on flug.id = s.id
+//                where group_id = 1'
+//            );
+//        } else {
+//            $query = DB::select(
+//                'with
+//                kor as (
+//                    select s.id, v2."name", max(v.created_at)
+//                        from students s
+//                            join vactinations v on v.student_id = s.id
+//                            join vaccines v2 on v2.id = v.vaccine_id
+//                        where v2."name" like \'В Корь\'
+//                    group by s.id, v2."name"
+//                ),
+//                cov as (
+//                    select s.id, v2."name", max(v.created_at)
+//                        from students s
+//                            join vactinations v on v.student_id = s.id
+//                            join vaccines v2 on v2.id = v.vaccine_id
+//                        where v2."name" like \'СПУТНИК\'
+//                    group by s.id, v2."name"
+//                ),
+//                flug as (
+//                    select s.id, f.result, max(f.created_at)
+//                        from students s
+//                            join flgs f on f.student_id = s.id
+//                    group by s.id, f.result
+//                )
+//                select ROW_NUMBER() OVER() AS Row, s.id, (s.name || \' \' || s.surname || \' \' || s.middlename) as fio, (flug.result || \' \' || flug.max) as flgs, (cov.name || \' \' || cov.max) as covi, (kor.name || \' \' || kor.max) as korb
+//                from students s
+//                left join cov on cov.id = s.id
+//                left join kor on kor.id = s.id
+//                left join flug on flug.id = s.id'
+//            );
+//        }
 
         $phpWord = new \PhpOffice\PhpWord\PhpWord();
 
         $section = $phpWord->addSection();
 
+        if (Str::contains($past, ['?name'])){
+            $date = Carbon::now();
+            $grName = Str::substr($past, -4);;
+            $valuev = array("Сведения о студентах группы № '$grName' от", $date);
+        } else {
+            $date = Carbon::now();
+            $valuev = array("Сведения о всех студентах от", $date);
+        }
+
         $section->addText("СПб ГБПОУ «Медицинский колледж им. В.М.Бехтерова»", ['bold'=>true]);
-        $section->addText("Сведения о студентах группы № 12 от 10.04.2022", ['bold'=>true]);
+        $section->addText(join(" ",$valuev), ['bold'=>true]);
 
 
         $table1 = $section->addTable([
@@ -193,7 +356,7 @@ class StudentsController extends Controller
             $table1->addRow();
             $table1->addCell(100)->addText($al->row);
             $table1->addCell(3000)->addText($al->fio);
-            $table1->addCell(3000)->addText($al->flg);
+            $table1->addCell(3000)->addText($al->flgs);
             $table1->addCell(3000)->addText($al->covi);
             $table1->addCell(3000)->addText($al->korb);
         }
@@ -202,12 +365,31 @@ class StudentsController extends Controller
 
 
         $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
-        try {
-            $objWriter->save(storage_path('helloWorld.docx'));
-        } catch (Exception $e) {
+
+        if (Str::contains($past, ['?name'])){
+            $grName = Str::substr($past, -4);;
+            $date = Carbon::now()->toDateString();
+            $valuev = array("Группа '$grName'-", $date, ".docx");
+
+            try {
+                $objWriter->save(storage_path(join("",$valuev)));
+            } catch (Exception $e) {
+            }
+
+
+            return response()->download(storage_path(join("",$valuev)));
+        } else {
+            $date = Carbon::now()->toDateString();
+            $valuev = array("Все группы-", $date, ".docx");
+
+            try {
+                $objWriter->save(storage_path(join("",$valuev)));
+            } catch (Exception $e) {
+            }
+
+
+            return response()->download(storage_path(join("",$valuev)));
         }
 
-
-        return response()->download(storage_path('helloWorld.docx'));
     }
 }

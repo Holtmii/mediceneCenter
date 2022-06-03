@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container">
-        <h4>Создание товара</h4>
+    <div class="container" style="align-content: center">
+        <h4>Создание записи студента</h4>
         <form method="POST" @if (isset($students)) action="{{ route('students.update', $students) }}"
               @else
               action="{{ route('students.store') }}" @endif>
@@ -25,7 +25,12 @@
 
             <div class="form-group">
                 <label for="phone">Телефон</label>
-                <input class="form-control" id="phone" rows="3" name="phone" value="{{ old('phone', isset($students) ? $students->phone : null) }}">
+                <input class="form-control" id="phone" name="phone" value="{{ old('phone', isset($students) ? $students->phone : null) }}">
+            </div>
+
+            <div class="form-group" style="visibility: hidden">
+                <label for="group_id">Телефон</label>
+                <input class="form-control" id="group_id" name="group_id" value="{{ old('group_id', isset($students) ? $students->group_id : 1) }}">
             </div>
 
             <div class="row">
